@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>FacetView</title>
+  <title>Solr FacetView</title>
 
   <script type="text/javascript" src="vendor/jquery/1.7.1/jquery-1.7.1.min.js"></script>
 
@@ -13,7 +13,6 @@
   <script type="text/javascript" src="vendor/jquery-ui-1.8.18.custom/jquery-ui-1.8.18.custom.min.js"></script>
 
   <!-- note that we require the es.js integration, the bootstrap2 facetview and the facetview core -->
-  <script type="text/javascript" src="es.js"></script>
   <script type="text/javascript" src="solr.js"></script>
   <script type="text/javascript" src="bootstrap2.facetview.theme.js"></script>
   <script type="text/javascript" src="jquery.facetview2.js"></script>
@@ -24,13 +23,15 @@
 jQuery(document).ready(function($) {
     $('.facet-view-simple').each(function() {
         $(this).facetview({
-            search_url : "http://imagecat.dyndns.org:8983/solr/imagecat/select?",
+            // search_url : "http://imagecat.dyndns.org:8983/solr/imagecat/select?",
+            search_url : "http://localhost:8983/solr/collection1/select?",
             search_index : "solr",
             datatype : "jsonp",
             default_freetext_fuzzify: "*",
             page_size: 15,
             sort: [{"content" : {"order" : "asc"}}],
             searchfield: "content",
+            query_parameter: "q",
             facets: [
                 //{'field': 'price', 'display': 'Price', "type" : "range", "range" : [{"to" : 10, "display" : "less than £10"}, {"from" : 10, "to" : 20, "display" : "£10 - £20"}, {"from" : 20, "to" : 40, "display" : "£20 - £40"}, {"from" : 40, "display" : "£40+"}], "open" : true},
                 // {'field' : 'loc', 'display' : 'Distance from me', 'type' : 'geo_distance', 

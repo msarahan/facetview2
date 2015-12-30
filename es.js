@@ -49,26 +49,26 @@ function optionsFromQuery(query) {
 
         return val;
     }
-    
+
     var opts = {};
 
     // FIXME: note that fields are not supported here
 
     // from position
     if (query.hasOwnProperty("from")) { opts["from"] = query.from }
-    
+
     // page size
     if (query.size) { opts["page_size"] = query.size }
-    
+
     if (query["sort"]) { opts["sort"] = query["sort"] }
-    
+
     // get hold of the bool query if it is there
     // and get hold of the query string and default operator if they have been provided
     if (query.query) {
         var sq = query.query;
         var must = [];
         var qs = undefined;
-        
+
         // if this is a filtered query, pull must and qs out of the filter
         // otherwise the root of the query is the query_string object
         if (sq.filtered) {
@@ -77,7 +77,7 @@ function optionsFromQuery(query) {
         } else {
             qs = sq
         }
-        
+
         // go through each clause in the must and pull out the options
         if (must.length > 0) {
             opts["_active_filters"] = {};
@@ -85,7 +85,7 @@ function optionsFromQuery(query) {
         }
         for (var i = 0; i < must.length; i++) {
             var clause = must[i];
-            
+
             // could be a term query (implies AND on this field)
             if ("term" in clause) {
                 for (var field in clause.term) {
@@ -99,7 +99,7 @@ function optionsFromQuery(query) {
                     }
                 }
             }
-            
+
             // could be a terms query (implies OR on this field)
             if ("terms" in clause) {
                 for (var field=0; field < clause.terms.length; field=field+1) {
@@ -111,7 +111,7 @@ function optionsFromQuery(query) {
                     opts["_active_filters"][field] = opts["_active_filters"][field].concat(values)
                 }
             }
-            
+
             // could be a range query (which may in turn be a range or a date histogram facet)
             if ("range" in clause) {
                 // get the field that we're ranging on
@@ -130,16 +130,16 @@ function optionsFromQuery(query) {
                     opts["_active_filters"][field] = range;
                 }
             }
-            
+
             // cound be a geo distance query
             if ("geo_distance_range" in clause) {
                 var gdr = clause.geo_distance_range;
-                
+
                 // the range is defined at the root of the range filter
                 var range = {};
                 if ("lt" in gdr) { range["to"] = stripDistanceUnits(gdr.lt) }
                 if ("gte" in gdr) { range["from"] = stripDistanceUnits(gdr.gte) }
-                
+
                 // FIXME: at some point we may need to make this smarter, if we start including other data
                 // in the geo_distance_range filter definition
                 // then we have to go looking for the field name
@@ -152,7 +152,7 @@ function optionsFromQuery(query) {
 
             // FIXME: support for statistical facet and terms_stats facet
         }
-        
+
         if (qs) {
             if (qs.query_string) {
                 var string = unescapeQueryString(qs.query_string.query);
@@ -165,7 +165,7 @@ function optionsFromQuery(query) {
                 opts["q"] = ""
             }
         }
-        
+
         return opts
     }
 }
@@ -293,7 +293,7 @@ function elasticSearchQuery(params) {
     } else {
         ftq = {"match_all" : {}}
     }
-    
+
     // if there are filter constraints (filter_must) then we create a filtered query,
     // otherwise make a normal query
     var qs = undefined;
@@ -303,17 +303,17 @@ function elasticSearchQuery(params) {
     } else {
         qs = {"query" : ftq}
     }
-    
+
     // sort order and direction
     options.sort && options.sort.length > 0 ? qs['sort'] = options.sort : "";
-    
+
     // fields and partial fields
     if (include_fields) {
         options.fields ? qs['fields'] = options.fields : "";
         options.partial_fields ? qs['partial_fields'] = options.partial_fields : "";
         options.script_fields ? qs["script_fields"] = options.script_fields : "";
     }
-    
+
     // paging (number of results, and start cursor)
     if (options.from !== undefined) {
         qs["from"] = options.from
@@ -321,7 +321,7 @@ function elasticSearchQuery(params) {
     if (options.page_size !== undefined) {
         qs["size"] = options.page_size
     }
-    
+
     // facets
     if (include_facets) {
         qs['facets'] = {};
@@ -330,10 +330,10 @@ function elasticSearchQuery(params) {
             if (defn.disabled) { continue }
 
             var size = defn.size;
-            
+
             // add a bunch of extra values to the facets to deal with the shard count issue
-            size += options.elasticsearch_facet_inflation 
-            
+            size += options.elasticsearch_facet_inflation
+
             var facet = {};
             if (defn.type === "terms") {
                 facet["terms"] = {"field" : defn["field"], "size" : size, "order" : defn["order"]}
@@ -370,14 +370,14 @@ function elasticSearchQuery(params) {
             }
             qs["facets"][defn["field"]] = facet
         }
-        
+
         // and any extra facets
         // NOTE: this does not include any treatment of the facet size inflation that may be required
         if (options.extra_facets) {
             $.extend(true, qs['facets'], options.extra_facets );
         }
     }
-    
+
     return qs
 }
 
@@ -457,18 +457,18 @@ function elasticSearchSuccess(callback) {
             "found" : data.hits.total,
             "facets" : {}
         };
-        
+
         // load the results into the records part of the result object
         for (var item = 0; item < data.hits.hits.length; item++) {
             var res = data.hits.hits[item];
             if ("fields" in res) {
                 // partial_fields and script_fields are also included here - no special treatment
-                resultobj.records.push(res.fields)
+                resultobj.records.push(res.fields);
             } else {
-                resultobj.records.push(res._source)
+                resultobj.records.push(res._source);
             }
         }
-        
+
         for (var item in data.facets) {
             if (data.facets.hasOwnProperty(item)) {
                 var facet = data.facets[item];
@@ -487,16 +487,16 @@ function elasticSearchSuccess(callback) {
                 // handle terms_stats
                 } else if (facet["_type"] === "terms_stats") {
                     var terms = facet["terms"];
-                    resultobj["facets"][item] = terms
+                    resultobj["facets"][item] = terms;
                 } else if (facet["_type"] === "date_histogram") {
-                    var entries = facet["entries"]
-                    resultobj["facets"][item] = entries
+                    var entries = facet["entries"];
+                    resultobj["facets"][item] = entries;
                 }
             }
         }
-            
-        callback(data, resultobj)
-    }
+
+        callback(data, resultobj);
+    };
 }
 
 function doElasticSearchQuery(params) {
@@ -506,19 +506,18 @@ function doElasticSearchQuery(params) {
     var search_url = params.search_url;
     var queryobj = params.queryobj;
     var datatype = params.datatype;
-    
+
     // serialise the query
     var querystring = serialiseQueryObject(queryobj);
-    
+
     // make the call to the elasticsearch web service
     $.ajax({
         type: "get",
         url: search_url,
-        data: {source: querystring},
-        processData: false,
+        data: {'source': querystring},
+        //processData: false,
         dataType: datatype,
         success: elasticSearchSuccess(success_callback),
         complete: complete_callback
     });
 }
-

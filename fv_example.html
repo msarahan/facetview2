@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>FacetView</title>
+  <title>ES FacetView</title>
 
   <script type="text/javascript" src="vendor/jquery/1.7.1/jquery-1.7.1.min.js"></script>
 
@@ -27,9 +27,9 @@ jQuery(document).ready(function($) {
             datatype : "jsonp",
             default_freetext_fuzzify: "*",
             page_size: 15,
-            sort: [{"title.exact" : {"order" : "asc"}}],
-            searchfield: "title",
-            q : "Money",
+            sort: [{"name" : {"order" : "asc"}}],
+            searchfield: "name",
+            q : "John",
             facets: [
                 {'field': 'price', 'display': 'Price', "type" : "range", "range" : [{"to" : 10, "display" : "less than £10"}, {"from" : 10, "to" : 20, "display" : "£10 - £20"}, {"from" : 20, "to" : 40, "display" : "£20 - £40"}, {"from" : 40, "display" : "£40+"}], "open" : true},
                 {'field' : 'loc', 'display' : 'Distance from me', 'type' : 'geo_distance', 

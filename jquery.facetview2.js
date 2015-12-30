@@ -160,7 +160,7 @@ function postRender(options, context) {}
 function shareableUrl(options, query_part_only, include_fragment) {
     var backend = options['search_index'];
     var source = null;
-    var querypart = "?source=" + encodeURIComponent(serialiseQueryObject(source));
+    var querypart = "?source=" + encodeURIComponent(serialiseQueryObject(options));
     if ('search_index' in options) {
         backend = options['search_index'];
     }

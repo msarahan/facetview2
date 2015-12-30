@@ -5,7 +5,7 @@
 // The reserved characters in solr query strings
 // Note that the "\" has to go first, as when these are substituted, that character
 // will get introduced as an escape character
-var solrSpecialChars = ["\\", "+", "-", "=", "&&", "||", ">", "<", "!", "(", ")", "{", "}", "[", "]", "^", "~", "*", "?", ":", "/"];
+var solrSpecialChars = ["\\", "+", "-", "=", "&&", "||", ">", "<", "!", "(", ")", "{", "}", "[", "]", '"', "^", "~", "*", "?", ":", "/"];
 
 // the reserved special character set with * and " removed, so that users can do quote searches and wildcards
 // if they want
@@ -18,7 +18,7 @@ var solrPairs = ['"'];
 // to allow/disallow specific values, but that requires a much better (automated) understanding of the
 // query DSL
 
-var solr_distance_units = ["km", "mi", "miles", "in", "inch", "yd", "yards", "kilometers", "mm", "millimeters", "cm", "centimeters", "m", "meters"]
+var solr_distance_units = ["km", "mi", "miles", "in", "inch", "yd", "yards", "kilometers", "mm", "millimeters", "cm", "centimeters", "m", "meters"];
 
 function optionsFromQuery(query) {
 
@@ -26,10 +26,10 @@ function optionsFromQuery(query) {
         for (var i=0; i < solr_distance_units.length; i=i+1) {
             var unit = solr_distance_units[i];
             if (endsWith(val, unit)) {
-                return val.substring(0, val.length - unit.length)
+                return val.substring(0, val.length - unit.length);
             }
         }
-        return val
+        return val;
     }
 
     function unescapeQueryString(val) {
@@ -44,7 +44,7 @@ function optionsFromQuery(query) {
         // Note we use the full list of special chars
         for (var i = 0; i < solrSpecialChars.length; i++) {
             var char = solrSpecialChars[i];
-            val = unReplaceAll(val, char)
+            val = unReplaceAll(val, char);
         }
 
         return val;
@@ -55,12 +55,12 @@ function optionsFromQuery(query) {
     // FIXME: note that fields are not supported here
 
     // from position
-    if (query.hasOwnProperty("from")) { opts["from"] = query.from }
+    if (query.hasOwnProperty("from")) { opts["from"] = query.from; }
 
     // page size
-    if (query.size) { opts["page_size"] = query.size }
+    if (query.size) { opts["page_size"] = query.size; }
 
-    if (query["sort"]) { opts["sort"] = query["sort"] }
+    if (query["sort"]) { opts["sort"] = query["sort"]; }
 
     // get hold of the bool query if it is there
     // and get hold of the query string and default operator if they have been provided
@@ -73,15 +73,15 @@ function optionsFromQuery(query) {
         // otherwise the root of the query is the query_string object
         if (sq.filtered) {
             must = sq.filtered.filter.bool.must;
-            qs = sq.filtered.query
+            qs = sq.filtered.query;
         } else {
-            qs = sq
+            qs = sq;
         }
 
         // go through each clause in the must and pull out the options
         if (must.length > 0) {
             opts["_active_filters"] = {};
-            opts["_selected_operators"] = {}
+            opts["_selected_operators"] = {};
         }
         for (var i = 0; i < must.length; i++) {
             var clause = must[i];
@@ -93,9 +93,9 @@ function optionsFromQuery(query) {
                         opts["_selected_operators"][field] = "AND";
                         var value = clause.term[field];
                         if (!(field in opts["_active_filters"])) {
-                            opts["_active_filters"][field] = []
+                            opts["_active_filters"][field] = [];
                         }
-                        opts["_active_filters"][field].push(value)
+                        opts["_active_filters"][field].push(value);
                     }
                 }
             }
@@ -106,9 +106,9 @@ function optionsFromQuery(query) {
                     opts["_selected_operators"][field] = "OR";
                     var values = clause.terms[field];
                     if (!(field in opts["_active_filters"])) {
-                        opts["_active_filters"][field] = []
+                        opts["_active_filters"][field] = [];
                     }
-                    opts["_active_filters"][field] = opts["_active_filters"][field].concat(values)
+                    opts["_active_filters"][field] = opts["_active_filters"][field].concat(values);
                 }
             }
 
@@ -125,8 +125,8 @@ function optionsFromQuery(query) {
                 if (field) {
                     var rparams = r[field];
                     var range = {};
-                    if ("lt" in rparams) { range["to"] = rparams.lt }
-                    if ("gte" in rparams) { range["from"] = rparams.gte }
+                    if ("lt" in rparams) { range["to"] = rparams.lt; }
+                    if ("gte" in rparams) { range["from"] = rparams.gte; }
                     opts["_active_filters"][field] = range;
                 }
             }
@@ -137,16 +137,16 @@ function optionsFromQuery(query) {
 
                 // the range is defined at the root of the range filter
                 var range = {};
-                if ("lt" in gdr) { range["to"] = stripDistanceUnits(gdr.lt) }
-                if ("gte" in gdr) { range["from"] = stripDistanceUnits(gdr.gte) }
+                if ("lt" in gdr) { range["to"] = stripDistanceUnits(gdr.lt); }
+                if ("gte" in gdr) { range["from"] = stripDistanceUnits(gdr.gte); }
 
                 // FIXME: at some point we may need to make this smarter, if we start including other data
                 // in the geo_distance_range filter definition
                 // then we have to go looking for the field name
                 for (var field=0; field < gdr.length; field=field+1) {
-                    if (field === "lt" || field === "gte") { continue }
-                    opts["_active_filters"][field] = range
-                    break
+                    if (field === "lt" || field === "gte") { continue; }
+                    opts["_active_filters"][field] = range;
+                    break;
                 }
             }
 
@@ -158,15 +158,15 @@ function optionsFromQuery(query) {
                 var string = unescapeQueryString(qs.query_string.query);
                 var field = qs.query_string.default_field;
                 var op = qs.query_string.default_operator;
-                if (string) { opts["q"] = string }
-                if (field) { opts["searchfield"] = field }
-                if (op) { opts["default_operator"] = op }
+                if (string) { opts["q"] = string; }
+                if (field) { opts["searchfield"] = field; }
+                if (op) { opts["default_operator"] = op; }
             } else if (qs.match_all) {
-                opts["q"] = ""
+                opts["q"] = "";
             }
         }
 
-        return opts
+        return opts;
     }
 }
 
@@ -179,7 +179,7 @@ function getFilters(params) {
             var item = options.facets[i];
             if ('field' in item) {
                 if (item['field'] === name) {
-                    return item
+                    return item;
                 }
             }
         }
@@ -205,25 +205,25 @@ function getFilters(params) {
     function rangeFilter(facet, value) {
         var rq = {"range" : {}};
         rq["range"][facet.field] = {};
-        if (value.to) { rq["range"][facet.field]["lt"] = value.to }
-        if (value.from) { rq["range"][facet.field]["gte"] = value.from }
-        return rq
+        if (value.to) { rq["range"][facet.field]["lt"] = value.to; }
+        if (value.from) { rq["range"][facet.field]["gte"] = value.from; }
+        return rq;
     }
 
     function geoFilter(facet, value) {
         var gq = {"geo_distance_range" : {}};
-        if (value.to) { gq["geo_distance_range"]["lt"] = value.to + facet.unit }
-        if (value.from) { gq["geo_distance_range"]["gte"] = value.from + facet.unit }
+        if (value.to) { gq["geo_distance_range"]["lt"] = value.to + facet.unit; }
+        if (value.from) { gq["geo_distance_range"]["gte"] = value.from + facet.unit; }
         gq["geo_distance_range"][facet.field] = [facet.lon, facet.lat]; // note the order of lon/lat to comply with GeoJSON
-        return gq
+        return gq;
     }
 
     function dateHistogramFilter(facet, value) {
         var rq = {"range" : {}};
         rq["range"][facet.field] = {};
-        if (value.to) { rq["range"][facet.field]["lt"] = value.to }
-        if (value.from) { rq["range"][facet.field]["gte"] = value.from }
-        return rq
+        if (value.to) { rq["range"][facet.field]["lt"] = value.to; }
+        if (value.from) { rq["range"][facet.field]["gte"] = value.from; }
+        return rq;
     }
 
     // function to make the relevant filters from the filter definition
@@ -235,38 +235,38 @@ function getFilters(params) {
 
                 // FIXME: is this the right behaviour?
                 // ignore any filters from disabled facets
-                if (facet.disabled) { continue }
+                if (facet.disabled) { continue; }
 
                 var filter_list = filter_definition[field];
 
                 if (facet.type === "terms") {
                     filters = filters.concat(termsFilter(facet, filter_list)); // Note this is a concat not a push, unlike the others
                 } else if (facet.type === "range") {
-                    filters.push(rangeFilter(facet, filter_list))
+                    filters.push(rangeFilter(facet, filter_list));
                 } else if (facet.type === "geo_distance") {
-                    filters.push(geoFilter(facet, filter_list))
+                    filters.push(geoFilter(facet, filter_list));
                 } else if (facet.type == "date_histogram") {
-                    filters.push(dateHistogramFilter(facet, filter_list))
+                    filters.push(dateHistogramFilter(facet, filter_list));
                 }
             }
         }
-        return filters
+        return filters;
     }
 
     // read any filters out of the options and create an array of "must" queries which
     // will constrain the search results
     var filter_must = [];
     if (options.active_filters) {
-        filter_must = filter_must.concat(makeFilters(options.active_filters))
+        filter_must = filter_must.concat(makeFilters(options.active_filters));
     }
     if (options.predefined_filters) {
-        filter_must = filter_must.concat(makeFilters(options.predefined_filters))
+        filter_must = filter_must.concat(makeFilters(options.predefined_filters));
     }
     if (options.fixed_filters) {
-        filter_must = filter_must.concat(options.fixed_filters)
+        filter_must = filter_must.concat(options.fixed_filters);
     }
 
-    return filter_must
+    return filter_must;
 }
 
 function solrQuery(params) {
@@ -285,13 +285,13 @@ function solrQuery(params) {
     if (querystring) {
         ftq = {'query_string' : { 'query': fuzzify(querystring, options.default_freetext_fuzzify) }};
         if (searchfield) {
-            ftq.query_string["default_field"] = searchfield
+            ftq.query_string["default_field"] = searchfield;
         }
         if (default_operator) {
-            ftq.query_string["default_operator"] = default_operator
+            ftq.query_string["default_operator"] = default_operator;
         }
     } else {
-        ftq = {"match_all" : {}}
+        ftq = {"match_all" : {}};
     }
 
     // if there are filter constraints (filter_must) then we create a filtered query,
@@ -301,74 +301,76 @@ function solrQuery(params) {
         qs = {"query" : {"filtered" : {"filter" : {"bool" : {"must" : filter_must}}}}};
         qs.query.filtered["query"] = ftq;
     } else {
-        qs = {"query" : ftq}
+        qs = {"query" : ftq};
     }
 
     // sort order and direction
-    options.sort && options.sort.length > 0 ? qs['sort'] = options.sort : "";
+    if (options.sort && options.sort.length > 0) {qs['sort'] = options.sort;} else {qs['sort'] = "";};
 
     // fields and partial fields
     if (include_fields) {
-        options.fields ? qs['fields'] = options.fields : "";
-        options.partial_fields ? qs['partial_fields'] = options.partial_fields : "";
-        options.script_fields ? qs["script_fields"] = options.script_fields : "";
+        qs['fields'] = options.fields ? options.fields : "";
+        qs['partial_fields'] = options.partial_fields ? options.partial_fields : "";
+        qs["script_fields"] = options.script_fields ? options.script_fields : "";
     }
 
     // paging (number of results, and start cursor)
     if (options.from !== undefined) {
-        qs["from"] = options.from
+        qs["from"] = options.from;
     }
     if (options.page_size !== undefined) {
-        qs["size"] = options.page_size
+        qs["size"] = options.page_size;
     }
+
+    qs["query_parameter"] = options.query_parameter ? options.query_parameter : "q";
 
     // facets
     if (include_facets) {
         qs['facets'] = {};
         for (var item = 0; item < options.facets.length; item++) {
             var defn = options.facets[item];
-            if (defn.disabled) { continue }
+            if (defn.disabled) { continue; }
 
             var size = defn.size;
 
             // add a bunch of extra values to the facets to deal with the shard count issue
-            size += options.solr_facet_inflation
+            size += options.solr_facet_inflation;
 
             var facet = {};
             if (defn.type === "terms") {
-                facet["terms"] = {"field" : defn["field"], "size" : size, "order" : defn["order"]}
+                facet["terms"] = {"field" : defn["field"], "size" : size, "order" : defn["order"]};
             } else if (defn.type === "range") {
                 var ranges = [];
                 for (var r=0; r < defn["range"].length; r=r+1) {
                     var def = defn["range"][r];
                     var robj = {};
-                    if (def.to) { robj["to"] = def.to }
-                    if (def.from) { robj["from"] = def.from }
-                    ranges.push(robj)
+                    if (def.to) { robj["to"] = def.to; }
+                    if (def.from) { robj["from"] = def.from; }
+                    ranges.push(robj);
                 }
                 facet["range"] = { };
-                facet["range"][defn.field] = ranges
+                facet["range"][defn.field] = ranges;
             } else if (defn.type === "geo_distance") {
-                facet["geo_distance"] = {}
+                facet["geo_distance"] = {};
                 facet["geo_distance"][defn["field"]] = [defn.lon, defn.lat]; // note that the order is lon/lat because of GeoJSON
                 facet["geo_distance"]["unit"] = defn.unit;
                 var ranges = [];
                 for (var r=0; r < defn["distance"].length; r=r+1) {
                     var def = defn["distance"][r];
                     var robj = {};
-                    if (def.to) { robj["to"] = def.to }
-                    if (def.from) { robj["from"] = def.from }
-                    ranges.push(robj)
+                    if (def.to) { robj["to"] = def.to; }
+                    if (def.from) { robj["from"] = def.from; }
+                    ranges.push(robj);
                 }
-                facet["geo_distance"]["ranges"] = ranges
+                facet["geo_distance"]["ranges"] = ranges;
             } else if (defn.type === "statistical") {
-                facet["statistical"] = {"field" : defn["field"]}
+                facet["statistical"] = {"field" : defn["field"]};
             } else if (defn.type === "terms_stats") {
-                facet["terms_stats"] = {key_field : defn["field"], value_field: defn["value_field"], size : size, order : defn["order"]}
+                facet["terms_stats"] = {key_field : defn["field"], value_field: defn["value_field"], size : size, order : defn["order"]};
             } else if (defn.type === "date_histogram") {
-                facet["date_histogram"] = {field : defn["field"], interval : defn["interval"]}
+                facet["date_histogram"] = {field : defn["field"], interval : defn["interval"]};
             }
-            qs["facets"][defn["field"]] = facet
+            qs["facets"][defn["field"]] = facet;
         }
 
         // and any extra facets
@@ -378,7 +380,7 @@ function solrQuery(params) {
         }
     }
 
-    return qs
+    return qs;
 }
 
 function fuzzify(querystr, default_freetext_fuzzify) {
@@ -403,48 +405,55 @@ function fuzzify(querystr, default_freetext_fuzzify) {
     return rqs;
 }
 
-function jsonStringEscape(key, value) {
-
-    function escapeRegExp(string) {
-        return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+function serialiseQueryObject(queryobj) {
+    // set default URL params
+    var urlparams = "wt=json&";
+    if (!queryobj) {return urlparams;}
+    for (var item in queryobj.default_url_params) {
+        urlparams += item + "=" + queryobj.default_url_params[item] + "&";
     }
-
-    function replaceAll(string, find, replace) {
-      return string.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+    // do paging params
+    var pageparams = "";
+    for (var item in queryobj.paging) {
+        pageparams += queryobj.solr_paging_params[item] + "=" + queryobj.paging[item] + "&";
     }
-
-    function paired(string, pair) {
-        var matches = (string.match(new RegExp(escapeRegExp(pair), "g"))) || []
-        return matches.length % 2 === 0;
-    }
-
-    // if we are looking at the query string, make sure that it is escaped
-    // (note that this precludes the use of queries like "name:bob", as the ":" would
-    // get escaped)
-    if (key === "query" && typeof(value) === 'string') {
-
-        var scs = solrSpecialCharsSubSet.slice(0);
-
-        // first check for pairs
-        for (var i = 0; i < solrPairs.length; i++) {
-            var char = solrPairs[i];
-            if (!paired(value, char)) {
-                scs.push(char);
-            }
+    // set facet params
+    var urlfilters = "";
+    for (var item in queryobj.facets) {
+        urlfilters += "facet.field=" + queryobj.facets[item]['field'] + "&";
+        if ( queryobj.facets[item]['size'] ) {
+            urlfilters += "f." + queryobj.facets[item]['field'] + ".facet.limit=" + queryobj.facets[item]['size'] + "&";
         }
-
-        for (var i = 0; i < scs.length; i++) {
-            var char = scs[i];
-            value = replaceAll(value, char, "\\" + char);
-        }
-
     }
-
-    return value;
-}
-
-function serialiseQueryObject(qs) {
-    return JSON.stringify(qs, jsonStringEscape);
+    if (queryobj.facets && queryobj.facets.length > 0 ) {
+        urlfilters += "facet=on&";
+    }
+    // build starting URL
+    var theurl = urlparams + pageparams + urlfilters;
+    // add default query values
+    // build the query, starting with default values
+    var query = "";
+    //for (var item in options.predefined_filters) {
+    // query += item + ":" + options.predefined_filters[item] + " AND ";
+    //}
+    $('.facetview_filterselected', queryobj.facets).each(function() {
+        query += $(this).attr('rel') + ':"' +
+        $(this).attr('href') + '" AND ';
+    });
+    // add any freetext filter
+    if (queryobj.q != "") {
+        query += queryobj.q;
+    }
+    if (!query.endsWith('*')) {
+        query += '*';
+    }
+    query = query.replace(/ AND $/,"");
+    // set a default for blank search
+    if (query == "" ||  !queryobj.q) {
+        query = "*:*";
+    }
+    theurl += queryobj.query_parameter + '=' + query;
+    return theurl;
 }
 
 // closure for elastic search success, which ultimately calls
@@ -463,19 +472,20 @@ function solrSuccess(callback) {
             var res = data.hits.hits[item];
             if ("fields" in res) {
                 // partial_fields and script_fields are also included here - no special treatment
-                resultobj.records.push(res.fields)
+                resultobj.records.push(res.fields);
             } else {
-                resultobj.records.push(res._source)
+                resultobj.records.push(res._source);
             }
         }
 
         for (var item in data.facets) {
             if (data.facets.hasOwnProperty(item)) {
                 var facet = data.facets[item];
+                var terms=null;
 
                 // handle any terms facets
                 if ("terms" in facet) {
-                    var terms = facet["terms"];
+                    terms = facet["terms"];
                     resultobj["facets"][item] = terms;
                 // handle any range/geo_distance_range facets
                 } else if ("ranges" in facet) {
@@ -486,36 +496,32 @@ function solrSuccess(callback) {
                     resultobj["facets"][item] = facet;
                 // handle terms_stats
                 } else if (facet["_type"] === "terms_stats") {
-                    var terms = facet["terms"];
-                    resultobj["facets"][item] = terms
+                    terms = facet["terms"];
+                    resultobj["facets"][item] = terms;
                 } else if (facet["_type"] === "date_histogram") {
-                    var entries = facet["entries"]
-                    resultobj["facets"][item] = entries
+                    var entries = facet["entries"];
+                    resultobj["facets"][item] = entries;
                 }
             }
         }
 
-        callback(data, resultobj)
-    }
+        callback(data, resultobj);
+    };
 }
 
 function doSolrQuery(params) {
     // extract the parameters of the request
     var success_callback = params.success;
     var complete_callback = params.complete;
-    var search_url = params.search_url;
-    var queryobj = params.queryobj;
+    var querystring = serialiseQueryObject(params.queryobj);
+    var search_url = params.search_url + querystring;
     var datatype = params.datatype;
-
-    // serialise the query
-    var querystring = serialiseQueryObject(queryobj);
 
     // make the call to the solr web service
     $.ajax({
-        type: "post",
-        url: search_url + "wt=json&json=" + querystring,
-        // data: querystring,
-        // processData: false,
+        type: "get",
+        url: search_url,
+        //processData: false,
         dataType: datatype,
         success: solrSuccess(success_callback),
         complete: complete_callback
