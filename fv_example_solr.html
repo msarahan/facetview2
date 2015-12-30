@@ -14,6 +14,7 @@
 
   <!-- note that we require the es.js integration, the bootstrap2 facetview and the facetview core -->
   <script type="text/javascript" src="es.js"></script>
+  <script type="text/javascript" src="solr.js"></script>
   <script type="text/javascript" src="bootstrap2.facetview.theme.js"></script>
   <script type="text/javascript" src="jquery.facetview2.js"></script>
 
@@ -23,28 +24,42 @@
 jQuery(document).ready(function($) {
     $('.facet-view-simple').each(function() {
         $(this).facetview({
-            search_url : "http://localhost:9200/customer/external/_search?",
+            search_url : "http://imagecat.dyndns.org:8983/solr/imagecat/select?",
+            search_index : "solr",
             datatype : "jsonp",
             default_freetext_fuzzify: "*",
             page_size: 15,
-            sort: [{"title.exact" : {"order" : "asc"}}],
-            searchfield: "title",
-            q : "Money",
+            sort: [{"content" : {"order" : "asc"}}],
+            searchfield: "content",
             facets: [
-                {'field': 'price', 'display': 'Price', "type" : "range", "range" : [{"to" : 10, "display" : "less than £10"}, {"from" : 10, "to" : 20, "display" : "£10 - £20"}, {"from" : 20, "to" : 40, "display" : "£20 - £40"}, {"from" : 40, "display" : "£40+"}], "open" : true},
-                {'field' : 'loc', 'display' : 'Distance from me', 'type' : 'geo_distance', 
-                    'unit' : 'mi', 'open' : true, "lat" : 51.533182, "lon" : -0.475996, 
-                    "distance" : [
-                    {"to" : 0.5, "display" : "within 0.5 miles"}, {"to" : 2, "display" : "within 2 miles"}, {"to" : 5, "display" : "within 5 miles"},
-                    {"to" : 10, "display" : "within 10 miles"}, {"to" : 20, "display" : "within 20 miles"}, {"to" : 50, "display" : "within 50 miles"}
-                    ]
-                },
-                {'field': 'subject.exact', 'display': 'Subject', "logic" : "OR", "open" : true, "value_function" :  function(value) {return value.toUpperCase() } },
-                {'field': 'condition.exact', 'display': 'Condition', "logic" : "AND"},
-                {'field': 'year', 'display': 'Publication Year', "size" : 26},
-                {'field': 'edition.exact', 'display': 'Edition', "order" : "reverse_count", "open" : true},
-                {'field' : 'inactive', 'display' : 'Inactive Visible', 'deactivate_threshold' : 2},
-                {'field' : 'invisible', 'display' : 'Inactive Inisible', 'deactivate_threshold' : 2, 'hide_inactive' : true},
+                //{'field': 'price', 'display': 'Price', "type" : "range", "range" : [{"to" : 10, "display" : "less than £10"}, {"from" : 10, "to" : 20, "display" : "£10 - £20"}, {"from" : 20, "to" : 40, "display" : "£20 - £40"}, {"from" : 40, "display" : "£40+"}], "open" : true},
+                // {'field' : 'loc', 'display' : 'Distance from me', 'type' : 'geo_distance', 
+                //    'unit' : 'mi', 'open' : true, "lat" : 51.533182, "lon" : -0.475996, 
+                //    "distance" : [
+                //    {"to" : 0.5, "display" : "within 0.5 miles"}, {"to" : 2, "display" : "within 2 miles"}, {"to" : 5, "display" : "within 5 miles"},
+                //    {"to" : 10, "display" : "within 10 miles"}, {"to" : 20, "display" : "within 20 miles"}, {"to" : 50, "display" : "within 50 miles"}
+                //    ]
+                //},
+                // {'field': 'subject.exact', 'display': 'Subject', "logic" : "OR", "open" : true, "value_function" :  function(value) {return value.toUpperCase() } },
+                // {'field': 'condition.exact', 'display': 'Condition', "logic" : "AND"},
+                // {'field': 'year', 'display': 'Publication Year', "size" : 26},
+                // {'field': 'edition.exact', 'display': 'Edition', "order" : "reverse_count", "open" : true},
+                // {'field' : 'inactive', 'display' : 'Inactive Visible', 'deactivate_threshold' : 2},
+                // {'field' : 'invisible', 'display' : 'Inactive Inisible', 'deactivate_threshold' : 2, 'hide_inactive' : true},
+                {"field":"cameraserialnumber_t_md", "display":"Camera Model Serial Number", 'logic' : "OR"},
+                {"field":"author_t_md", "display":"Author (Image)", 'logic' : "OR"},
+                {"field":"exifimageheight_t_md", "display":"Image Height", 'logic' : "OR"},
+                {"field":"exifimagewidth_t_md", "display":"Image Width", 'logic' : "OR"},
+                {"field":"software_t_md", "display":"Software"},
+                {"field":"make_t_md", "display":"Camera Make"},
+                {"field":"flash_t_md", "display":"Flash Fired"},
+                {"field":"scenetype_t_md", "display":"Scene Type"},
+                {"field":"lightsource_t_md", "display":"Light Source"},
+                {"field":"geo:lat_d_md", "display":"Latitude"},
+                {"field":"geo:long_d_md", "display":"Longitude"},
+                {"field":"content", "display":"Content"},
+                {"field":"date/time_t_md", "display":"Date/Time"}
+ 
             ],
             default_facet_size: 11,
             default_facet_operator: "AND",
