@@ -58,7 +58,7 @@ function optionsFromQuery(query) {
     if (query.hasOwnProperty("from")) { opts["from"] = query.from; }
 
     // page size
-    if (query.size) { opts["page_size"] = query.size; }
+    if (query.page_size) { opts["page_size"] = query.page_size; }
 
     if (query["sort"]) { opts["sort"] = query["sort"]; }
 
@@ -307,6 +307,8 @@ function solrQuery(params) {
     // sort order and direction
     if (options.sort && options.sort.length > 0) {qs['sort'] = options.sort;} else {qs['sort'] = "";};
 
+    qs['page_size'] = options.page_size ? options.page_size : 100;
+
     // fields and partial fields
     if (include_fields) {
         qs['fields'] = options.fields ? options.fields : "";
@@ -316,10 +318,7 @@ function solrQuery(params) {
 
     // paging (number of results, and start cursor)
     if (options.from !== undefined) {
-        qs["from"] = options.from;
-    }
-    if (options.page_size !== undefined) {
-        qs["size"] = options.page_size;
+        qs["start"] = options.from;
     }
 
     qs["query_parameter"] = options.query_parameter ? options.query_parameter : "q";
@@ -394,7 +393,7 @@ function fuzzify(querystr, default_freetext_fuzzify) {
                     var oip = optparts[oi];
                     if ( oip.length > 0 ) {
                         oip = oip + default_freetext_fuzzify;
-                        default_freetext_fuzzify == "*" ? oip = "*" + oip : false;
+                        oip = default_freetext_fuzzify == "*" ? "*" + oip : false;
                         pq += oip + " ";
                     }
                 }
@@ -408,7 +407,6 @@ function fuzzify(querystr, default_freetext_fuzzify) {
 function serialiseQueryObject(queryobj) {
     // set default URL params
     var urlparams = "wt=json&";
-    if (!queryobj) {return urlparams;}
     for (var item in queryobj.default_url_params) {
         urlparams += item + "=" + queryobj.default_url_params[item] + "&";
     }
@@ -417,6 +415,8 @@ function serialiseQueryObject(queryobj) {
     for (var item in queryobj.paging) {
         pageparams += queryobj.solr_paging_params[item] + "=" + queryobj.paging[item] + "&";
     }
+    var rows = queryobj.page_size;
+    pageparams += "rows=" + rows + "&";
     // set facet params
     var urlfilters = "";
     for (var item in queryobj.facets) {
@@ -424,6 +424,16 @@ function serialiseQueryObject(queryobj) {
         if ( queryobj.facets[item]['size'] ) {
             urlfilters += "f." + queryobj.facets[item]['field'] + ".facet.limit=" + queryobj.facets[item]['size'] + "&";
         }
+    }
+    if (queryobj.sort) {
+        urlfilters += "sort=";
+        for (var sorter in queryobj.sort) {
+            if (queryobj.sort.hasOwnProperty(sorter)) {
+                var keyname = Object.keys(queryobj.sort[sorter])[0];
+                urlfilters += keyname + "+" + queryobj.sort[sorter][keyname]["order"]+",";
+            }
+        }
+        urlfilters = urlfilters.substr(0, urlfilters.length - 1) + "&";
     }
     if (queryobj.facets && queryobj.facets.length > 0 ) {
         urlfilters += "facet=on&";
@@ -461,47 +471,34 @@ function serialiseQueryObject(queryobj) {
 function solrSuccess(callback) {
     return function(data) {
         var resultobj = {
-            "records" : [],
-            "start" : "",
-            "found" : data.hits.total,
+            "records" : data.response.docs,
+            "start" : data.response.start,
+            "found" : data.response.numFound,
             "facets" : {}
         };
 
+        if (data.facet_counts) {
+            for (var item in data.facet_counts.facet_fields) {
+                var facetsobj = new Object();
+                var count = 0;
+                for ( var each in data.facet_counts.facet_fields[item]) {
+                    if ( count % 2 == 0 ) {
+                        facetsobj[ data.facet_counts.facet_fields[item][each] ] = data.facet_counts.facet_fields[item][count + 1];
+                    }
+                    count += 1;
+                }
+                resultobj["facets"][item] = facetsobj;
+            }
+        }
+
         // load the results into the records part of the result object
-        for (var item = 0; item < data.hits.hits.length; item++) {
-            var res = data.hits.hits[item];
+        for (var item = 0; item < data.response.numFound; item++) {
+            var res = data.response.docs[item];
             if ("fields" in res) {
                 // partial_fields and script_fields are also included here - no special treatment
                 resultobj.records.push(res.fields);
             } else {
-                resultobj.records.push(res._source);
-            }
-        }
-
-        for (var item in data.facets) {
-            if (data.facets.hasOwnProperty(item)) {
-                var facet = data.facets[item];
-                var terms=null;
-
-                // handle any terms facets
-                if ("terms" in facet) {
-                    terms = facet["terms"];
-                    resultobj["facets"][item] = terms;
-                // handle any range/geo_distance_range facets
-                } else if ("ranges" in facet) {
-                    var range = facet["ranges"];
-                    resultobj["facets"][item] = range;
-                // handle statistical facets
-                } else if (facet["_type"] === "statistical") {
-                    resultobj["facets"][item] = facet;
-                // handle terms_stats
-                } else if (facet["_type"] === "terms_stats") {
-                    terms = facet["terms"];
-                    resultobj["facets"][item] = terms;
-                } else if (facet["_type"] === "date_histogram") {
-                    var entries = facet["entries"];
-                    resultobj["facets"][item] = entries;
-                }
+                resultobj.records.push(res);
             }
         }
 
@@ -521,9 +518,15 @@ function doSolrQuery(params) {
     $.ajax({
         type: "get",
         url: search_url,
-        //processData: false,
+        processData: false,
         dataType: datatype,
+        //dataType: "text",
+        //contentType: "text/plain",
+        //crossDomain: true,
+        //converters: "text json",
+        jsonp: "json.wrf",
         success: solrSuccess(success_callback),
-        complete: complete_callback
+        complete: complete_callback,
+        error: function(jqXHR, textStatus, errorThrown){debugger;}
     });
 }

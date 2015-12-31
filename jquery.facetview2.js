@@ -1367,6 +1367,7 @@ function getUrlVars() {
                 if (facet.disabled) { continue; }
 
                 var field = facet['field'];
+                if (!(field in results.facets)){continue;}
                 var size = facet.hasOwnProperty("size") ? facet["size"] : options.default_facet_size;
 
                 // get the records to be displayed, limited by the size and record against
