@@ -318,7 +318,7 @@ function solrQuery(params) {
 
     // paging (number of results, and start cursor)
     if (options.from !== undefined) {
-        qs["start"] = options.from;
+        qs["from"] = options.from;
     }
 
     qs["query_parameter"] = options.query_parameter ? options.query_parameter : "q";
@@ -417,6 +417,8 @@ function serialiseQueryObject(queryobj) {
     }
     var rows = queryobj.page_size;
     pageparams += "rows=" + rows + "&";
+    var start = queryobj.from ? queryobj.from : 0;
+    pageparams += "start=" + start + "&";
     // set facet params
     var urlfilters = "";
     for (var item in queryobj.facets) {
